@@ -1,0 +1,69 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  name          String?
+  avatarUrl     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  roleId        String?
+  role          Role?     @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  accounts      Account[]
+
+  @@index([email])
+  @@index([roleId])
+}
+
+model Role {
+  id          String       @id @default(uuid())
+  name        String       @unique // e.g., "Super Admin", "QA Engineer", "Custom Client"
+  description String?      
+  isSystem    Boolean      @default(false) // Protects core roles from being deleted by users
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  // Relations
+  users       User[]
+  permissions Permission[] // Implicit Many-to-Many relation with Permissions
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  action      String   @unique // e.g., "ticket:write", "ticket:delete", "user:invite"
+  description String?
+  createdAt   DateTime @default(now())
+
+  // Relations
+  roles       Role[]   // Implicit Many-to-Many relation with Roles
+}
+
+model Account {
+  id                String   @id @default(uuid())
+  userId            String
+  provider          String   // "credentials", "google", "github"
+  providerAccountId String   // The user's ID in the external system (or email for credentials)
+  passwordHash      String?  // Nullable because social logins won't have a password
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
