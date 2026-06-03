@@ -1,4 +1,3 @@
-// src/services/auth.service.ts
 import { prisma } from '../config/db.ts';
 import { redis } from '../config/redis.ts';
 import bcrypt from 'bcrypt';
