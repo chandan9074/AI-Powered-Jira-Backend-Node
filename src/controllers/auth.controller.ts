@@ -3,10 +3,24 @@ import { AuthService } from '../services/auth.service';
 import { getCookieOptions } from '../utils/cookies';
 
 export class AuthController {
+
+  static async requestOtp(req: Request, res: Response) {
+    try {
+      const { email } = req.body;
+      await AuthService.requestRegistrationOtp(email);
+      
+      res.status(200).json({ message: 'OTP sent successfully to email' });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
+
   static async register(req: Request, res: Response) {
     try {
-      const { email, password, name } = req.body;
-      const { accessToken, refreshToken, userId } = await AuthService.registerUser(email, password, name);
+      // Destructure otp from the request body
+      const { email, password, name, otp } = req.body; 
+      
+      const { accessToken, refreshToken, userId } = await AuthService.registerUser(email, password, name, otp);
 
       AuthController.setCookies(res, accessToken, refreshToken);
       res.status(201).json({ message: 'Registration successful', userId });

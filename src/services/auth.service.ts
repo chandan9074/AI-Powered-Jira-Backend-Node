@@ -1,31 +1,55 @@
 import { prisma } from '../config/db.ts';
 import { redis } from '../config/redis.ts';
+import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import { generateTokens } from '../utils/tokens.ts';
+import { EmailService } from './email.service.ts';
 
 export class AuthService {
-  static async registerUser(email: string, passwordPlain: string, name: string) {
-    // 1. Check if user exists
+
+  static async requestRegistrationOtp(email: string) {
+    // Check if user already exists in DB to prevent sending OTPs to registered users
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) throw new Error('User already exists');
 
-    // 2. Hash password and create user + credentials account
-    const passwordHash = await bcrypt.hash(passwordPlain, 10);
+    // Generate a secure 6-digit numeric OTP
+    const otp = crypto.randomInt(100000, 999999).toString();
+
+    // Store in Redis with a 10-minute expiration (600 seconds)
+    // The key is prefixed with 'reg_otp:' to avoid namespace collisions
+    await redis.set(`reg_otp:${email}`, otp, 'EX', 600);
+
+    // Send the email (in a real app, you might want to run this asynchronously)
+    await EmailService.sendOtpEmail(email, otp);
+  }
+
+  static async registerUser(email: string, passwordPlain: string, name: string, otp: string) {
+    // Check Redis for the OTP
+    const storedOtp = await redis.get(`reg_otp:${email}`);
     
+    if (!storedOtp) throw new Error('OTP has expired or was never requested');
+    if (storedOtp !== otp) throw new Error('Invalid OTP');
+
+    // Make sure user doesn't exist (edge case: registered in another tab)
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) throw new Error('User already exists');
+
+    // Hash password and create user
+    const passwordHash = await bcrypt.hash(passwordPlain, 10);
     const user = await prisma.user.create({
       data: {
         email,
         name,
         accounts: {
-          create: {
-            provider: 'credentials',
-            providerAccountId: email,
-            passwordHash,
-          }
+          create: { provider: 'credentials', providerAccountId: email, passwordHash }
         }
       }
     });
 
+    // Clean up: Delete the OTP from Redis so it cannot be reused
+    await redis.del(`reg_otp:${email}`);
+
+    // Create session and return tokens (from previous implementation)
     return this.createSession(user.id);
   }
 
