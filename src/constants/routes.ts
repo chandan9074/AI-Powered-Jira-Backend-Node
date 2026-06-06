@@ -9,6 +9,8 @@ export const ROUTES = {
         REQUEST_OTP: '/request-otp',
         REFRESH: '/refresh',
         CSRF_TOKEN: '/csrf-token',
+        LOGOUT: '/logout',
+
         // We pre-calculate the exact cookie path so we never get it wrong
         get COOKIE_REFRESH_PATH() {
         return `${API_VERSION}${this.BASE}${this.REFRESH}`;

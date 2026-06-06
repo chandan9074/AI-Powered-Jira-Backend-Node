@@ -16,5 +16,6 @@ router.post(ROUTES.AUTH.REQUEST_OTP, otpLimiter, validate(requestOtpSchema), Aut
 
 router.post(ROUTES.AUTH.REGISTER, validate(registerSchema), AuthController.register);
 router.post(ROUTES.AUTH.LOGIN, verifyCsrf, validate(loginSchema), AuthController.login);
+router.post(ROUTES.AUTH.LOGOUT, verifyCsrf, AuthController.logout);
 
 export default router;

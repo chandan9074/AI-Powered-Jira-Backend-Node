@@ -3,7 +3,7 @@ import cookieParser from 'cookie-parser';
 import authRoutes from './routes/auth.routes';
 import cors from "cors";
 import helmet from "helmet";
-import { ROUTES } from './constants/routes';
+import { API_VERSION, ROUTES } from './constants/routes';
 
 const app = express();
 
@@ -18,6 +18,6 @@ app.use(cors({
 }));
 
 // Routes
-app.use(ROUTES.AUTH.BASE, authRoutes);
+app.use(`${API_VERSION}${ROUTES.AUTH.BASE}`, authRoutes);
 
 export default app;

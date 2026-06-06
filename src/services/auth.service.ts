@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import { generateTokens } from '../utils/tokens.ts';
 import { EmailService } from './email.service.ts';
+import jwt from 'jsonwebtoken';
 
 export class AuthService {
 
@@ -68,6 +69,19 @@ export class AuthService {
     if (!isValid) throw new Error('Invalid credentials');
 
     return this.createSession(user.id);
+  }
+
+  static async logoutUser(refreshToken: string) {
+    try {
+      const decoded = jwt.decode(refreshToken) as { userId: string } | null;
+
+      if (decoded && decoded.userId) {
+        // 2. Delete the session from Redis
+        await redis.del(`refresh_token:${decoded.userId}`);
+      }
+    } catch (error) {
+      console.error('Logout error: Failed to clear Redis session', error);
+    }
   }
 
   private static async createSession(userId: string) {

@@ -42,6 +42,26 @@ export class AuthController {
     }
   }
 
+  static async logout(req: Request, res: Response) {
+    try {
+      const { refreshToken } = req.cookies;
+
+      if (refreshToken) {
+        // Invalidate the session in the database/Redis
+        await AuthService.logoutUser(refreshToken);
+      }
+    } catch (error) {
+      console.error('Logout Controller Error:', error);
+    } finally {
+
+      res.clearCookie('accessToken');
+      
+      res.clearCookie('refreshToken', { path: ROUTES.AUTH.COOKIE_REFRESH_PATH });
+      
+      res.status(200).json({ message: 'Logged out successfully' });
+    }
+  }
+
   private static setCookies(res: Response, accessToken: string, refreshToken: string) {
     res.cookie('accessToken', accessToken, {
       ...getCookieOptions(),
