@@ -49,6 +49,7 @@ export class AuthController {
 
     res.cookie('refreshToken', refreshToken, {
       ...getCookieOptions(),
+      path: '/auth/refresh-token', // Restrict refresh token to only be sent to the refresh endpoint
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
   }
