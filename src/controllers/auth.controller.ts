@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { AuthService } from '../services/auth.service';
 import { getCookieOptions } from '../utils/cookies';
+import { ROUTES } from '../constants/routes';
 
 export class AuthController {
 
@@ -49,7 +50,7 @@ export class AuthController {
 
     res.cookie('refreshToken', refreshToken, {
       ...getCookieOptions(),
-      path: '/auth/refresh-token', // Restrict refresh token to only be sent to the refresh endpoint
+      path: ROUTES.AUTH.COOKIE_REFRESH_PATH, // Restrict refresh token to only be sent to the refresh endpoint
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
   }
